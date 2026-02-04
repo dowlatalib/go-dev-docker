@@ -4,6 +4,9 @@
         test lint clean \
         npm npx
 
+# Docker exec with host user ownership
+DOCKER_EXEC = docker compose exec -u $$(id -u):$$(id -g) -e GOPATH=/tmp/go -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod-cache
+
 # Default target
 help:
 	@echo "Available commands:"
@@ -57,7 +60,7 @@ logs:
 	docker compose logs -f app
 
 shell:
-	docker compose exec app bash
+	$(DOCKER_EXEC) app bash
 
 # Database migration commands
 migrate-create:
@@ -65,33 +68,33 @@ migrate-create:
 		echo "Error: Please provide migration name. Usage: make migrate-create name=create_users_table"; \
 		exit 1; \
 	fi
-	docker compose exec -w /app/backend app migrate create -ext sql -dir migrations -seq $(name)
+	$(DOCKER_EXEC) -w /app/backend app migrate create -ext sql -dir migrations -seq $(name)
 
 migrate-up:
-	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" up
+	$(DOCKER_EXEC) -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" up
 
 migrate-down:
-	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" down 1
+	$(DOCKER_EXEC) -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" down 1
 
 migrate-force:
 	@if [ -z "$(v)" ]; then \
 		echo "Error: Please provide version. Usage: make migrate-force v=1"; \
 		exit 1; \
 	fi
-	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" force $(v)
+	$(DOCKER_EXEC) -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" force $(v)
 
 migrate-version:
-	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" version
+	$(DOCKER_EXEC) -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" version
 
 # Code generation commands
 sqlc-generate:
-	docker compose exec -w /app/backend app sqlc generate
+	$(DOCKER_EXEC) -w /app/backend app sqlc generate
 
 swagger-generate:
-	docker compose exec -w /app/backend app swag init -g cmd/api/main.go -o cmd/docs --parseDependency --parseInternal
+	$(DOCKER_EXEC) -w /app/backend app swag init -g cmd/api/main.go -o cmd/docs --parseDependency --parseInternal
 
 swagger-fmt:
-	docker compose exec -w /app/backend app swag fmt
+	$(DOCKER_EXEC) -w /app/backend app swag fmt
 
 generate: sqlc-generate swagger-generate
 	@echo "All code generation completed!"
@@ -108,26 +111,26 @@ ifeq (npx,$(firstword $(MAKECMDGOALS)))
 endif
 
 npm:
-	docker compose exec -w /app/frontend app npm $(NPM_ARGS)
+	$(DOCKER_EXEC) -w /app/frontend app npm $(NPM_ARGS)
 
 npx:
-	docker compose exec -w /app/frontend app npx $(NPX_ARGS)
+	$(DOCKER_EXEC) -w /app/frontend app npx $(NPX_ARGS)
 
 # Development commands
 test:
-	docker compose exec -w /app/backend app go test -v ./...
+	$(DOCKER_EXEC) -w /app/backend app go test -v ./...
 
 test-coverage:
-	docker compose exec -w /app/backend app go test -coverprofile=coverage.out ./...
-	docker compose exec -w /app/backend app go tool cover -html=coverage.out -o coverage.html
+	$(DOCKER_EXEC) -w /app/backend app go test -coverprofile=coverage.out ./...
+	$(DOCKER_EXEC) -w /app/backend app go tool cover -html=coverage.out -o coverage.html
 
 lint:
-	docker compose exec -w /app/backend app golangci-lint run ./...
+	$(DOCKER_EXEC) -w /app/backend app golangci-lint run ./...
 
 # Clean commands
 clean:
-	docker compose exec -w /app/backend app rm -rf tmp/
-	docker compose exec -w /app/backend app rm -rf cmd/docs/
+	$(DOCKER_EXEC) -w /app/backend app rm -rf tmp/
+	$(DOCKER_EXEC) -w /app/backend app rm -rf cmd/docs/
 
 clean-volumes:
 	docker compose down -v

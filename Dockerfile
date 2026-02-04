@@ -1,4 +1,4 @@
-# Development Dockerfile for Go with Air, Migrate, SQLC, and Swagger
+# Development Dockerfile for Go with Air, Migrate, SQLC, Swagger, and LSPs
 FROM golang:1.25.6-alpine
 
 # Build arguments for user mapping
@@ -36,6 +36,12 @@ RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 # Install Swag (Swagger generator)
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 
+# Install gopls (Go language server)
+RUN go install golang.org/x/tools/gopls@latest
+
+# Install sqls (SQL language server)
+RUN go install github.com/sqls-server/sqls@latest
+
 # Copy Go binaries to a shared location
 RUN cp /go/bin/* /usr/local/bin/
 
@@ -50,6 +56,13 @@ ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
 # Create npm directories owned by devuser
 RUN mkdir -p /home/devuser/.npm-global /home/devuser/.npm-cache && \
     chown -R devuser:devgroup /home/devuser/.npm-global /home/devuser/.npm-cache
+
+# Install language servers for Node.js/TS, Vue, and Svelte
+RUN su-exec devuser npm install -g \
+    typescript \
+    typescript-language-server \
+    @vue/language-server \
+    svelte-language-server
 
 # Set working directory
 WORKDIR /app
