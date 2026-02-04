@@ -39,8 +39,10 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Install gopls (Go language server)
 RUN go install golang.org/x/tools/gopls@latest
 
-# Install sqls (SQL language server)
-RUN go install github.com/sqls-server/sqls@latest
+# Install sqls (SQL language server) — requires CGO for godror (Oracle driver)
+RUN apk add --no-cache gcc musl-dev && \
+    CGO_ENABLED=1 go install github.com/sqls-server/sqls@latest && \
+    apk del gcc musl-dev
 
 # Copy Go binaries to a shared location
 RUN cp /go/bin/* /usr/local/bin/
