@@ -120,7 +120,7 @@ Konfigurasi ada di `.air.toml`.
 
 ## Swagger
 
-Akses Swagger UI di: http://localhost:8080/swagger/
+Akses Swagger UI di: http://localhost:8080/openapi/
 
 Untuk update documentation:
 ```bash
