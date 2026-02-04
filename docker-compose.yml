@@ -23,6 +23,7 @@ services:
         condition: service_healthy
     networks:
       - dev-network
+    command: ["air", "-c", ".air.toml"]
     # Keep container running for development
     stdin_open: true
     tty: true

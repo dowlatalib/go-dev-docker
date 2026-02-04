@@ -50,4 +50,3 @@ RUN mkdir -p /go/pkg/mod && \
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["air", "-c", ".air.toml"]
