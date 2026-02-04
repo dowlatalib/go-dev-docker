@@ -14,8 +14,9 @@ if [ "$(id -g devuser)" != "$GROUP_ID" ]; then
     groupmod -g $GROUP_ID devgroup 2>/dev/null || true
 fi
 
-# Fix ownership of go directories
+# Fix ownership of directories
 chown -R devuser:devgroup /go 2>/dev/null || true
+chown -R devuser:devgroup /home/devuser/.npm-global /home/devuser/.npm-cache 2>/dev/null || true
 
 # Execute command as devuser
 exec su-exec devuser:devgroup "$@"

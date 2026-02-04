@@ -6,11 +6,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
 
 	_ "app/cmd/docs" // Import generated swagger docs
+	"app/static"
 )
 
 // @title           Your API
@@ -44,13 +46,23 @@ func main() {
 	app.Use(cors.New())
 
 	// Swagger documentation
-	app.Get("/swagger/*", swagger.HandlerDefault)
+	app.Get("/openapi/*", swagger.HandlerDefault)
 
 	// API routes
 	api := app.Group("/api/v1")
 
 	// Health check
 	api.Get("/health", healthCheck)
+
+	// Serve embedded frontend (SPA fallback)
+	frontendFS, err := static.BuildHTTPFS()
+	if err != nil {
+		log.Fatalf("Failed to load frontend: %v", err)
+	}
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:         frontendFS,
+		NotFoundFile: "index.html",
+	}))
 
 	// Start server
 	port := os.Getenv("APP_PORT")

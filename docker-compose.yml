@@ -9,12 +9,15 @@ services:
       - GO111MODULE=on
       - GOPROXY=https://proxy.golang.org,direct
     volumes:
-      # Mount project directory
-      - .:/app
+      # Mount backend and frontend directories
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
       # Persist Go modules cache
       - go-mod-cache:/go/pkg/mod
       # Persist Go build cache
       - go-build-cache:/home/devuser/.cache/go-build
+      # Persist npm cache
+      - npm-cache:/home/devuser/.npm-cache
     ports:
       - "8080:8080" # Application
       - "2345:2345" # Delve debugger (optional)
@@ -23,7 +26,7 @@ services:
         condition: service_healthy
     networks:
       - dev-network
-    command: ["air", "-c", ".air.toml"]
+    command: ["air", "-c", "/app/backend/.air.toml"]
     # Keep container running for development
     stdin_open: true
     tty: true
@@ -50,6 +53,7 @@ services:
 volumes:
   go-mod-cache:
   go-build-cache:
+  npm-cache:
   postgres-data:
 
 networks:

@@ -39,12 +39,24 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Copy Go binaries to a shared location
 RUN cp /go/bin/* /usr/local/bin/
 
+# Install latest Node.js via official Alpine package
+RUN apk add --no-cache nodejs npm
+
+# Configure npm for devuser: prefix, cache, and PATH
+ENV NPM_CONFIG_PREFIX=/home/devuser/.npm-global
+ENV NPM_CONFIG_CACHE=/home/devuser/.npm-cache
+ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
+
+# Create npm directories owned by devuser
+RUN mkdir -p /home/devuser/.npm-global /home/devuser/.npm-cache && \
+    chown -R devuser:devgroup /home/devuser/.npm-global /home/devuser/.npm-cache
+
 # Set working directory
 WORKDIR /app
 
 # Create directories that might be needed
-RUN mkdir -p /go/pkg/mod && \
-    chown -R devuser:devgroup /go
+RUN mkdir -p /go/pkg/mod /app/backend /app/frontend && \
+    chown -R devuser:devgroup /go /app/backend /app/frontend
 
 # Entrypoint script to handle permissions
 COPY --chmod=755 entrypoint.sh /entrypoint.sh

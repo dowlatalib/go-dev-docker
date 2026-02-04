@@ -1,14 +1,16 @@
-.PHONY: help build up down restart logs shell \
+.PHONY: help build build-prod up down restart logs shell \
         migrate-create migrate-up migrate-down migrate-force \
         sqlc-generate swagger-generate generate \
-        test lint clean
+        test lint clean \
+        npm npx
 
 # Default target
 help:
 	@echo "Available commands:"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make build          - Build Docker images"
+	@echo "  make build          - Build development Docker images"
+	@echo "  make build-prod     - Build production Docker image"
 	@echo "  make up             - Start containers"
 	@echo "  make down           - Stop containers"
 	@echo "  make restart        - Restart containers"
@@ -26,6 +28,10 @@ help:
 	@echo "  make swagger-generate  - Generate Swagger docs"
 	@echo "  make generate          - Run all code generation"
 	@echo ""
+	@echo "Frontend (Node.js):"
+	@echo "  make npm ...        - Run npm command in /app/frontend"
+	@echo "  make npx ...        - Run npx command in /app/frontend"
+	@echo ""
 	@echo "Development:"
 	@echo "  make test           - Run tests"
 	@echo "  make lint           - Run linter"
@@ -34,6 +40,9 @@ help:
 # Docker commands
 build:
 	USER_ID=$$(id -u) GROUP_ID=$$(id -g) docker compose build
+
+build-prod:
+	docker build -f Dockerfile.prod -t app-prod .
 
 up:
 	USER_ID=$$(id -u) GROUP_ID=$$(id -g) docker compose up -d
@@ -56,52 +65,69 @@ migrate-create:
 		echo "Error: Please provide migration name. Usage: make migrate-create name=create_users_table"; \
 		exit 1; \
 	fi
-	docker compose exec app migrate create -ext sql -dir migrations -seq $(name)
+	docker compose exec -w /app/backend app migrate create -ext sql -dir migrations -seq $(name)
 
 migrate-up:
-	docker compose exec app migrate -path migrations -database "$${DATABASE_URL}" up
+	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" up
 
 migrate-down:
-	docker compose exec app migrate -path migrations -database "$${DATABASE_URL}" down 1
+	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" down 1
 
 migrate-force:
 	@if [ -z "$(v)" ]; then \
 		echo "Error: Please provide version. Usage: make migrate-force v=1"; \
 		exit 1; \
 	fi
-	docker compose exec app migrate -path migrations -database "$${DATABASE_URL}" force $(v)
+	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" force $(v)
 
 migrate-version:
-	docker compose exec app migrate -path migrations -database "$${DATABASE_URL}" version
+	docker compose exec -w /app/backend app migrate -path migrations -database "$${DATABASE_URL}" version
 
 # Code generation commands
 sqlc-generate:
-	docker compose exec app sqlc generate
+	docker compose exec -w /app/backend app sqlc generate
 
 swagger-generate:
-	docker compose exec app swag init -g cmd/api/main.go -o cmd/docs --parseDependency --parseInternal
+	docker compose exec -w /app/backend app swag init -g cmd/api/main.go -o cmd/docs --parseDependency --parseInternal
 
 swagger-fmt:
-	docker compose exec app swag fmt
+	docker compose exec -w /app/backend app swag fmt
 
 generate: sqlc-generate swagger-generate
 	@echo "All code generation completed!"
 
+# Frontend (Node.js) commands
+# Usage: make npm install, make npm run dev, make npx create-next-app .
+ifeq (npm,$(firstword $(MAKECMDGOALS)))
+  NPM_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(NPM_ARGS):;@:)
+endif
+ifeq (npx,$(firstword $(MAKECMDGOALS)))
+  NPX_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(NPX_ARGS):;@:)
+endif
+
+npm:
+	docker compose exec -w /app/frontend app npm $(NPM_ARGS)
+
+npx:
+	docker compose exec -w /app/frontend app npx $(NPX_ARGS)
+
 # Development commands
 test:
-	docker compose exec app go test -v ./...
+	docker compose exec -w /app/backend app go test -v ./...
 
 test-coverage:
-	docker compose exec app go test -coverprofile=coverage.out ./...
-	docker compose exec app go tool cover -html=coverage.out -o coverage.html
+	docker compose exec -w /app/backend app go test -coverprofile=coverage.out ./...
+	docker compose exec -w /app/backend app go tool cover -html=coverage.out -o coverage.html
 
 lint:
-	docker compose exec app golangci-lint run ./...
+	docker compose exec -w /app/backend app golangci-lint run ./...
 
 # Clean commands
 clean:
-	docker compose exec app rm -rf tmp/
-	docker compose exec app rm -rf docs/
+	docker compose exec -w /app/backend app rm -rf tmp/
+	docker compose exec -w /app/backend app rm -rf cmd/docs/
 
 clean-volumes:
 	docker compose down -v

@@ -1,0 +1,2 @@
+backend/static/frontend_dist/*
+!backend/static/frontend_dist/.gitkeep
