@@ -1,82 +1,29 @@
-# Air configuration for Go hot reload
-# Documentation: https://github.com/air-verse/air
-
-root = "/app/backend"
-testdata_dir = "testdata"
+root = "."
 tmp_dir = "tmp"
 
 [build]
-  # Build arguments
-  args_bin = []
-
-  # Binary output
   bin = "./tmp/main"
-
-  # Build command
-  cmd = "go build -o ./tmp/main ./cmd/api"
-
-  # Build delay after file change
+  cmd = "go build -o ./tmp/main ./cmd/server"
   delay = 1000
-
-  # Directories to exclude from watching
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", ".git"]
-
-  # Exclude files matching these patterns
+  exclude_dir = ["assets", "tmp", "vendor", "node_modules", ".git"]
   exclude_file = []
-
-  # Exclude patterns (regex)
-  exclude_regex = ["_test.go", "_templ.go"]
-
-  # Exclude unchanged files
+  exclude_regex = ["_test.go"]
   exclude_unchanged = false
-
-  # Follow symlinks
   follow_symlink = false
-
-  # Full binary path
   full_bin = ""
-
-  # Watch these file extensions
-  include_ext = ["go", "tpl", "tmpl", "html", "sql"]
-
-  # Watch these directories
   include_dir = []
-
-  # Watch these files
+  include_ext = ["go", "tpl", "tmpl", "html"]
   include_file = []
-
-  # Kill delay
   kill_delay = "0s"
-
-  # Log output
   log = "build-errors.log"
-
-  # Poll files instead of using fsnotify
   poll = false
-
-  # Poll interval
   poll_interval = 0
-
-  # Post-build commands (generate swagger docs)
-  post_cmd = []
-
-  # Pre-build commands (generate sqlc)
-  pre_cmd = []
-
-  # Rerun on file change
   rerun = false
-
-  # Rerun delay
   rerun_delay = 500
-
-  # Send interrupt signal before kill
   send_interrupt = false
-
-  # Stop on error
   stop_on_error = false
 
 [color]
-  # Customize colors
   app = ""
   build = "yellow"
   main = "magenta"
@@ -84,25 +31,12 @@ tmp_dir = "tmp"
   watcher = "cyan"
 
 [log]
-  # Log main only
   main_only = false
-
-  # Show log time
   time = false
 
 [misc]
-  # Clean on exit
-  clean_on_exit = false
-
-[proxy]
-  # Proxy configuration (optional)
-  app_port = 0
-  enabled = false
-  proxy_port = 0
+  clean_on_exit = true
 
 [screen]
-  # Clear screen on rebuild
-  clear_on_rebuild = true
-
-  # Keep scroll position
+  clear_on_rebuild = false
   keep_scroll = true

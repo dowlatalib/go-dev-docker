@@ -1,177 +1,93 @@
-# Go Development Environment
+# Go Dev Docker
 
-Development environment dengan Docker, Air (hot reload), golang-migrate, SQLC, dan Swagger.
+A Docker-based development environment for Go backend applications with PostgreSQL database and MinIO object storage integration.
+
+## Features
+
+- **Live Code Reloading**: Automatic recompilation on code changes using [Air](https://github.com/cosmtrek/air)
+- **Database Integration**: PostgreSQL with multiple database support
+- **Object Storage**: MinIO for file storage
+- **API Documentation**: Swagger documentation generation
+- **VS Code Dev Containers**: Seamless IDE integration for containerized development
 
 ## Prerequisites
 
-- Docker & Docker Compose
-- Make (optional, tapi sangat disarankan)
-
-## Quick Start
-
-```bash
-# 1. Copy environment file
-cp .env.example .env
-
-# 2. Build dan start containers
-make build
-make up
-
-# 3. Jalankan migrations
-make migrate-up
-
-# 4. Generate SQLC code
-make sqlc-generate
-
-# 5. Generate Swagger docs
-make swagger-generate
-
-# 6. Lihat logs
-make logs
-```
-
-## File Ownership
-
-Setup ini memastikan semua file yang digenerate oleh container (migrations, sqlc, swagger) tetap dimiliki oleh user host, bukan root.
-
-Caranya adalah dengan passing `USER_ID` dan `GROUP_ID` ke container:
-
-```bash
-# Makefile sudah handle ini secara otomatis
-make build
-make up
-
-# Atau manual:
-USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose up -d
-```
-
-## Available Commands
-
-### Docker
-
-| Command | Description |
-|---------|-------------|
-| `make build` | Build Docker images dengan UID/GID host |
-| `make up` | Start semua containers |
-| `make down` | Stop semua containers |
-| `make restart` | Restart app container |
-| `make logs` | View logs (follow mode) |
-| `make shell` | Open bash shell di app container |
-
-### Database Migrations
-
-| Command | Description |
-|---------|-------------|
-| `make migrate-create name=xxx` | Buat migration baru |
-| `make migrate-up` | Jalankan semua pending migrations |
-| `make migrate-down` | Rollback 1 migration |
-| `make migrate-force v=xxx` | Force set version |
-| `make migrate-version` | Lihat current version |
-
-### Code Generation
-
-| Command | Description |
-|---------|-------------|
-| `make sqlc-generate` | Generate Go code dari SQL queries |
-| `make swagger-generate` | Generate Swagger documentation |
-| `make generate` | Jalankan semua code generation |
-
-### Development
-
-| Command | Description |
-|---------|-------------|
-| `make test` | Run tests |
-| `make test-coverage` | Run tests dengan coverage report |
-| `make lint` | Run linter |
-| `make clean` | Hapus generated files |
-| `make clean-volumes` | Stop containers dan hapus volumes |
+- Docker 20.10+
+- Docker Compose 1.29+
+- VS Code with Dev Containers extension (optional)
 
 ## Project Structure
 
 ```
-.
-├── cmd/
-│   └── api/
-│       └── main.go          # Application entrypoint
-├── internal/
-│   └── db/
-│       ├── queries/         # SQLC query files (.sql)
-│       └── sqlc/            # Generated SQLC code
-├── migrations/              # Database migrations
-├── docs/                    # Generated Swagger docs
-├── tmp/                     # Air build output
-├── .air.toml               # Air configuration
-├── docker-compose.yml
-├── Dockerfile
-├── entrypoint.sh
-├── go.mod
-├── Makefile
-└── sqlc.yaml               # SQLC configuration
+go-dev-docker/
+├── backend/                 # Go application backend
+│   ├── cmd/server/         # Application entrypoint
+│   ├── docs/               # Generated documentation
+│   ├── .air.toml           # Live reload configuration
+│   └── go.mod              # Go module definition
+├── frontend/               # Frontend application
+├── Dockerfile              # Development container definition
+├── docker-compose.yml      # Multi-container orchestration
+└── .devcontainer/          # VS Code dev container config
 ```
 
-## Hot Reload
+## Quick Start
 
-Air akan otomatis rebuild dan restart aplikasi ketika ada perubahan pada:
-- File `.go`
-- File `.sql` (untuk detect perubahan queries)
-- File template (`.tpl`, `.tmpl`, `.html`)
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd go-dev-docker
+   ```
 
-Konfigurasi ada di `.air.toml`.
+2. **Start the development environment**
+   ```bash
+   docker-compose up
+   ```
 
-## Swagger
+3. **Access the application**
+   - API: http://localhost:8080
 
-Akses Swagger UI di: http://localhost:8080/openapi/
+## VS Code Development
 
-Untuk update documentation:
-```bash
-make swagger-generate
-```
+1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
+2. Open the project in VS Code
+3. Click "Reopen in Container" when prompted
+4. Dependencies will be automatically installed
 
-## Database
+## Development Tools
 
-PostgreSQL running di port `5432` dengan credentials:
-- Host: `localhost` (dari host) atau `db` (dari container)
-- User: `postgres`
-- Password: `postgres`
-- Database: `app_dev`
+The Docker container includes:
 
-Connection string:
-```
-postgres://postgres:postgres@localhost:5432/app_dev?sslmode=disable
-```
+| Tool | Description |
+|------|-------------|
+| [Air](https://github.com/cosmtrek/air) | Live reload for Go applications |
+| [golang-migrate](https://github.com/golang-migrate/migrate) | Database migration tool |
+| [sqlc](https://sqlc.dev/) | Type-safe SQL code generator |
+| [swag](https://github.com/swaggo/swag) | Swagger documentation generator |
+| [gopls](https://pkg.go.dev/golang.org/x/tools/gopls) | Go language server |
 
-## Troubleshooting
-
-### Permission Issues
-
-Jika masih ada permission issues:
+## Common Commands
 
 ```bash
-# Check current UID/GID
-id -u  # USER_ID
-id -g  # GROUP_ID
+# Start all services
+docker-compose up
 
-# Rebuild dengan explicit values
-USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose build --no-cache
-USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose up -d
+# Start in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild containers
+docker-compose up --build
+
+# Access container shell
+docker-compose exec app sh
 ```
 
-### Container tidak bisa start
+## License
 
-```bash
-# Check logs
-docker compose logs app
-
-# Rebuild fresh
-make clean-volumes
-make build
-make up
-```
-
-### SQLC errors
-
-Pastikan migrations sudah dijalankan sebelum generate SQLC:
-```bash
-make migrate-up
-make sqlc-generate
-```
+[Add your license here]

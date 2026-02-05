@@ -1,61 +1,13 @@
 services:
   app:
-    image: ghcr.io/dowlatalib/go-dev-docker:latest
-    container_name: go-dev
-    environment:
-      - USER_ID=${USER_ID:-1000}
-      - GROUP_ID=${GROUP_ID:-1000}
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/app_dev?sslmode=disable
-      - GO111MODULE=on
-      - GOPROXY=https://proxy.golang.org,direct
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "go-app"
+    restart: unless-stopped
+    env_file:
+      - .env
     volumes:
-      # Mount backend and frontend directories
-      - ./backend:/app/backend
-      - ./frontend:/app/frontend
-      # Persist Go modules cache
-      - go-mod-cache:/go/pkg/mod
-      # Persist Go build cache
-      - go-build-cache:/home/devuser/.cache/go-build
-      # Persist npm cache
-      - npm-cache:/home/devuser/.npm-cache
-    ports:
-      - "8080:8080" # Application
-      - "2345:2345" # Delve debugger (optional)
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - dev-network
-    command: ["air", "-c", "/app/backend/.air.toml"]
-    # Keep container running for development
-    stdin_open: true
-    tty: true
-
-  db:
-    image: postgres:16-alpine
-    container_name: go-dev-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: app_dev
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - dev-network
-
-volumes:
-  go-mod-cache:
-  go-build-cache:
-  npm-cache:
-  postgres-data:
-
-networks:
-  dev-network:
-    driver: bridge
+      - ./backend:/app
+    working_dir: /app
+    command: ["air", "-c", ".air.toml"]
