@@ -24,6 +24,9 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Install gopls (Go language server)
 RUN go install golang.org/x/tools/gopls@latest
 
+# Install latest Node.js via official Alpine package
+RUN apk add --no-cache nodejs npm
+
 # Set working directory
 WORKDIR /app
 
